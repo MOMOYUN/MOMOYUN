@@ -1,0 +1,30 @@
+name: Validate random-app
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            apps/miniapp/package-lock.json
+            apps/display/package-lock.json
+      - run: node --test tests/*.test.ts
+      - run: npm ci --prefix apps/miniapp
+      - run: npm ci --prefix apps/display
+      - run: npm run typecheck
+      - run: npm run build:miniapp
+      - run: npm run build:display
+      - uses: actions/upload-artifact@v4
+        with:
+          name: preview-builds
+          path: |
+            apps/miniapp/dist/build/mp-weixin
+            apps/display/dist

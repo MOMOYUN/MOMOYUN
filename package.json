@@ -1,0 +1,12 @@
+{
+  "name": "random-app",
+  "private": true,
+  "version": "0.11.0",
+  "scripts": {
+    "test": "node --test tests/*.test.ts",
+    "build:miniapp": "npm --prefix apps/miniapp run build:mp-weixin",
+    "build:display": "npm --prefix apps/display run build",
+    "typecheck": "npm --prefix apps/miniapp run type-check"
+  },
+  "type": "module"
+}
