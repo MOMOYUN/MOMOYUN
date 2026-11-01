@@ -4,7 +4,7 @@
 
 - 7 项 Node 原生测试通过：跨奖项/批次去重、规则输入隔离、状态流转、非法配置、权重区间、身份/版本校验、停止请求重试。
 - 大屏 Vite production build 通过。
-- 小程序 uni build -p mp-weixin 通过，产物为 apps/miniapp/dist/build/mp-weixin；未配置真实 AppID，不能作为已上线证明。
+- 小程序 uni build -p mp-weixin 通过，产物为 apps/miniapp/dist/build/mp-weixin；后续已填入用户提供的真实 AppID 和云环境 ID 并重新构建通过，不能作为已上线证明。
 - 小程序 vue-tsc --noEmit 通过。
 - 服务层测试使用内存 Repository；CloudBase Repository 适配器、真实事务、云端部署均未实现，不能据此宣称云端并发安全已验证。
 - 未执行微信真机测试、跨设备同步或视觉验收；尚未提交审核或发布。
