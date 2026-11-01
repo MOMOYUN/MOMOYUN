@@ -1,16 +1,17 @@
-# 云环境接入
+# 云环境部署
 
-AppID：`wxa945ff67e92028f0`；环境：`luna-d4gsa16d63765d1fb`。
+AppID：wxa945ff67e92028f0；环境：luna-d4gsa16d63765d1fb。
 
-代码已配置环境并在微信端启动时初始化 wx.cloud。初始化本身不证明环境可访问；只有真实云函数调用成功才展示连接成功。traceUser 关闭，避免仅为初始化额外记录访问统计。
+小程序启动时初始化 wx.cloud，traceUser 关闭。health 与 event 均已部署。
 
-## 验证步骤
+安装两端依赖后，在根目录运行 npm run build:functions 和 npm run build:miniapp。用微信开发者工具导入本工程根目录。上传 event 时选择“云端安装依赖”，部署内容入口为生成的 index.js，业务源代码为 handler.ts/service.ts 及 packages/lottery-core。
 
-1. 构建小程序后，用微信开发者工具导入本工程根目录（含 project.config.json），使用该小程序管理员或开发者微信登录。
-2. 打开云开发，选择上述环境；确认环境关联当前 AppID。如果是独立腾讯云环境，按官方文档在环境配置的安全配置中关联小程序。
-3. 在开发者工具中对 cloudfunctions/health 右键，选择上传并部署（云端安装依赖）。仅部署 health，event 目录目前是服务层源码，尚不能部署。
-4. 在小程序“活动抽奖”页面点击“检查云服务”。成功说明微信身份、环境和 health 函数调用链路可用；失败时保留错误信息排查。
+修改源代码后必须重新运行 build:functions。CLI 部署命令：
 
-2026-11-01 已通过用户登录的微信开发者工具部署 health，模拟器真实调用成功并展示云服务连接成功。尚未建立数据库集合、部署抽奖服务或连接网页大屏。health 不读取或写入名单和开奖结果。后续 event 需完成事务存储适配、请求记录有界存储、数据库拒绝客户端直读写与只读大屏授权，才能启用正式云端开奖。
+    cli cloud functions deploy --env luna-d4gsa16d63765d1fb --names event --remote-npm-install --project <工程根目录>
 
-官方参考：https://docs.cloudbase.net/recipes/add-cloud-function-wechat-miniprogram
+首次创建函数时可能先进入 Creating 状态；确认 Active 后重试部署，不要把第一次创建确认当作代码已更新成功。
+
+用户已手动登录开发者工具并开启服务端口；不要把登录票据或本机私有配置提交到仓库。
+
+event 首次创建活动时建立 lottery_events 集合。迁移至其他环境时，必须重新验证客户端直读和直写都被拒绝，再使用真实名单。网页大屏尚未接入，禁止为方便同步而开放此集合。

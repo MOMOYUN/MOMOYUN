@@ -20,6 +20,7 @@ jobs:
       - run: npm ci --prefix apps/miniapp
       - run: npm ci --prefix apps/display
       - run: npm run typecheck
+      - run: npm run build:functions
       - run: npm run build:miniapp
       - run: npm run build:display
       - uses: actions/upload-artifact@v4
@@ -28,3 +29,4 @@ jobs:
           path: |
             apps/miniapp/dist/build/mp-weixin
             apps/display/dist
+            cloudfunctions/event/index.js

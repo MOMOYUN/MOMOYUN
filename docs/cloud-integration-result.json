@@ -1,0 +1,23 @@
+{
+  "eventId": "c31123cc3920958e77a229fd8e3ab81600e7b194cdab6aff68d3a9a991336daa",
+  "completed": true,
+  "batches": 3,
+  "uniqueWinners": 6,
+  "duplicateCreate": "passed",
+  "duplicateStop": "passed",
+  "concurrentStop": "passed",
+  "restore": "passed",
+  "clientRead": {
+    "readable": false,
+    "error": "document.get:fail cannot find document with _id c31123cc3920958e77a229fd8e3ab81600e7b194cdab6aff68d3a9a991336daa, please make sure that the document exists and you have the corresponding access permission"
+  },
+  "clientWrite": {
+    "writable": false,
+    "result": {
+      "stats": {
+        "updated": 0
+      },
+      "errMsg": "document.update:ok"
+    }
+  }
+}

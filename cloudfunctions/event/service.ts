@@ -1,3 +1,4 @@
+const clone=<T>(value:T):T=>JSON.parse(JSON.stringify(value));
 import {createEvent, startDraw, stopDraw, nextDraw} from '../../packages/lottery-core/index.ts';
 import type {EventState, Rules} from '../../packages/shared-types/index.ts';
 
@@ -18,10 +19,10 @@ export function eventService(repo:Repository, random:()=>number) {
       if(!/^[a-zA-Z0-9-]{8,80}$/.test(requestId)) throw new Error('INVALID_REQUEST_ID');
       return repo.transaction(id, record=>{
         if(record.owner!==owner) throw new Error('FORBIDDEN');
-        const cached=record.requests[requestId];
+        const cached=Object.hasOwn(record.requests,requestId)?record.requests[requestId]:undefined;
         if(cached){
           if(cached.action!==action||cached.version!==version) throw new Error('REQUEST_ID_REUSED');
-          return structuredClone(cached.result);
+          return clone(cached.result);
         }
         if(record.state.version!==version) throw new Error('VERSION_CONFLICT');
         let result:EventState;
@@ -30,8 +31,11 @@ export function eventService(repo:Repository, random:()=>number) {
         else if(action==='next') result=nextDraw(record.state);
         else throw new Error('INVALID_ACTION');
         record.state=result;
-        record.requests[requestId]={action,version,result:structuredClone(result)};
-        return structuredClone(result);
+        // Keep only the most recent response. Older retries fail the version check,
+        // so they cannot redraw, while document size remains bounded.
+        record.requests={};
+        record.requests[requestId]={action,version,result:clone(result)};
+        return clone(result);
       });
     }
   };

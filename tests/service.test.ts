@@ -25,3 +25,17 @@ test('停止重试返回原始结果且只抽取一次；另一个停止请求�
  await assert.rejects(service.command('owner','event','stop',1,'request-3'),/VERSION_CONFLICT/);
  await assert.rejects(service.command('owner','event','next',2,'request-2'),/REQUEST_ID_REUSED/);
 });
+test('旧请求被淘汰后由版本检查拒绝，不能重新抽取',async()=>{
+ const {service,calls}=fixture();await service.create('owner',rules);
+ await service.command('owner','event','start',0,'request-1');
+ await service.command('owner','event','stop',1,'request-2');
+ await service.command('owner','event','next',2,'request-3');
+ await assert.rejects(service.command('owner','event','stop',1,'request-2'),/VERSION_CONFLICT/);
+ assert.equal(calls(),1);
+});
+test('并发停止请求只允许一个成功',async()=>{
+ const {service,calls}=fixture();await service.create('owner',rules);
+ await service.command('owner','event','start',0,'request-1');
+ const results=await Promise.allSettled(['request-a','request-b'].map(request=>service.command('owner','event','stop',1,request)));
+ assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(calls(),1);
+});

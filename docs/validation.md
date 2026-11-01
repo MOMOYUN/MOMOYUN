@@ -1,21 +1,14 @@
 # 验证记录
 
-2026-11-01，Windows，Node v24.22.1。
+2026-11-01，Windows，Node v24.22.1；微信开发者工具 v2.02.2609240。
 
-- 7 项 Node 原生测试通过：跨奖项/批次去重、规则输入隔离、状态流转、非法配置、权重区间、身份/版本校验、停止请求重试。
-- 大屏 Vite production build 通过。
-- 小程序 uni build -p mp-weixin 通过，产物为 apps/miniapp/dist/build/mp-weixin；后续已填入用户提供的真实 AppID 和云环境 ID 并重新构建通过，不能作为已上线证明。
-- 小程序 vue-tsc --noEmit 通过。
-- 服务层测试使用内存 Repository；CloudBase Repository 适配器、真实事务、云端部署均未实现，不能据此宣称云端并发安全已验证。
-- 未执行微信真机测试、跨设备同步或视觉验收；尚未提交审核或发布。
+- 9 项 Node 测试通过：规则快照、去重、权重边界、非法配置、所有者校验、版本冲突、停止重试、缓存淘汰后重试和内存事务并发停止。
+- 小程序类型检查、微信生产构建通过；大屏骨架此前已通过生产构建。
+- health 与 event 均已部署到指定真实环境。
+- 真实云端接口测试通过：重复创建返回同一场次；2 个奖项、3 批共6个示例参与人无重复中奖；并发停止仅一个成功；停止重试返回原结果；读取恢复一致。证据见 cloud-integration-result.json。
+- 微信模拟器页面点击流程通过：输入4个示例名字与2个奖项，逐批点击开始、停止、下一批，最终显示3张结果卡。预览图在工程包外的 outputs/cloud-event-preview.png。
+- 客户端直读/直写验证见 JSON 证据。不同 OPENID 的访问隔离目前仅有服务层测试，仍需第二个微信账号真机验证。
 
-模板来源：dcloudio/uni-preset-vue，vite-ts 分支，commit f747e3b11c51b3bff6c05e2b54f9a3173a590044。依赖首次安装后由各端 package-lock.json 锁定。
+尚未完成真机、跨设备大屏、网络断线、完整 UI/图片上传、自动停止与微信审核。测试创建的少量活动均标注示例名单并留存，没有删除云端记录。
 
-参考官方资料：
-
-- https://uniapp.dcloud.net.cn/quickstart-cli
-- https://docs.cloudbase.net/database/transaction
-
-生产接入前必须将随机源设为服务端加密随机源，并实现 OPENID 校验、原子提交、请求去重和只读大屏授权。
-
-云环境验证补充：2026-11-01 22:21（Asia/Shanghai），微信开发者工具 v2.02.2609240，health 云函数上传成功，模拟器真实调用通过。仅验证云端连接，不代表抽奖服务、真机或大屏联调通过。
+官方模板来源：dcloudio/uni-preset-vue vite-ts，commit f747e3b11c51b3bff6c05e2b54f9a3173a590044。
