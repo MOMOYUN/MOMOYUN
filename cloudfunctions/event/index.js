@@ -44,6 +44,9 @@ function check(ok, message) {
 function createEvent(input) {
   const rules = clone(input);
   check(rules.name.trim(), "\u8BF7\u586B\u5199\u6D3B\u52A8\u540D\u79F0");
+  check(rules.stopMode === void 0 || ["manual", "auto"].includes(rules.stopMode), "\u5F00\u5956\u65B9\u5F0F\u65E0\u6548");
+  check(Number.isInteger(rules.countdownSeconds ?? 0) && (rules.countdownSeconds ?? 0) >= 0 && (rules.countdownSeconds ?? 0) <= 10, "\u5012\u8BA1\u65F6\u9700\u4E3A0\u201310\u79D2");
+  check(Number.isInteger(rules.rollingSeconds ?? 3) && (rules.rollingSeconds ?? 3) >= 1 && (rules.rollingSeconds ?? 3) <= 30, "\u6EDA\u52A8\u65F6\u957F\u9700\u4E3A1\u201330\u79D2");
   check(rules.participants.length > 0 && rules.participants.length <= 1e3, "\u540D\u5355\u9700\u4E3A1\u20131000\u4EBA");
   check(new Set(rules.participants.map((p) => p.id)).size === rules.participants.length, "\u53C2\u4E0E\u4EBAID\u91CD\u590D");
   check(rules.participants.every((p) => p.id && p.name.trim()), "\u53C2\u4E0E\u4EBA\u4E0D\u80FD\u4E3A\u7A7A");
@@ -61,13 +64,17 @@ function createEvent(input) {
   check(total <= rules.participants.length, "\u603B\u540D\u989D\u8D85\u8FC7\u53C2\u4E0E\u4EBA\u6570");
   return { rules, phase: "ready", prize: 0, batch: 0, results: [], version: 0 };
 }
-function startDraw(state) {
+function startDraw(state, now = Date.now()) {
   check(state.phase === "ready", "\u5F53\u524D\u4E0D\u80FD\u5F00\u59CB");
-  return { ...clone(state), phase: "running", version: state.version + 1 };
+  const revealAfter = now + (state.rules.countdownSeconds ?? 0) * 1e3;
+  return { ...clone(state), phase: "running", version: state.version + 1, revealAfter, stopAfter: revealAfter + (state.rules.rollingSeconds ?? 3) * 1e3 };
 }
 function stopDraw(state, random, now = Date.now()) {
   check(state.phase === "running", "\u5F53\u524D\u4E0D\u80FD\u505C\u6B62");
   const s = clone(state), p = s.rules.prizes[s.prize];
+  check(now >= (s.revealAfter ?? 0), "\u5012\u8BA1\u65F6\u5C1A\u672A\u7ED3\u675F");
+  if (s.rules.stopMode === "auto")
+    check(now >= (s.stopAfter ?? Infinity), "\u81EA\u52A8\u5F00\u5956\u5C1A\u672A\u5230\u65F6");
   const used = new Set(s.results.flatMap((r) => r.winners.map((w) => w.id)));
   let pool = s.rules.participants.filter((x) => !used.has(x.id));
   const winners = [];
@@ -109,6 +116,19 @@ function nextDraw(state) {
 var clone2 = (value) => JSON.parse(JSON.stringify(value));
 function eventService(repo, random) {
   return {
+    async settle(owner, id, now = Date.now()) {
+      if (!owner)
+        throw new Error("UNAUTHENTICATED");
+      return repo.transaction(id, (record) => {
+        if (record.owner !== owner)
+          throw new Error("FORBIDDEN");
+        if (record.state.phase === "running" && record.state.rules.stopMode === "auto" && now >= (record.state.stopAfter ?? Infinity)) {
+          record.state = stopDraw(record.state, random, now);
+          record.requests = {};
+        }
+        return clone2(record.state);
+      });
+    },
     async create(owner, rules) {
       if (!owner)
         throw new Error("UNAUTHENTICATED");
@@ -229,12 +249,13 @@ async function main(input) {
     else if (input.action !== "get") {
       if (!Number.isSafeInteger(input.version) || input.version < 0)
         throw new Error("INVALID_VERSION");
-      const state = await service.command(owner, id, input.action, input.version, input.requestId);
-      return { ok: true, id, state };
+      const state2 = await service.command(owner, id, input.action, input.version, input.requestId);
+      return { ok: true, id, state: state2, serverNow: Date.now() };
     }
     const record = await read(doc);
     requireOwner(record, owner);
-    return { ok: true, id, state: record.state };
+    const state = input.action === "get" && record.state.phase === "running" && record.state.rules.stopMode === "auto" && Date.now() >= (record.state.stopAfter ?? Infinity) ? await service.settle(owner, id) : record.state;
+    return { ok: true, id, state, serverNow: Date.now() };
   } catch (e) {
     console.error("event operation failed", e);
     return { ok: false, error: e.message || "CLOUD_ERROR" };

@@ -6,7 +6,7 @@ declare const wx: {
   };
 };
 let initialized=false;
-export async function callEvent(data:unknown):Promise<{id:string;state:import('../../../../packages/shared-types/index').EventState}> {
+export async function callEvent(data:unknown):Promise<{id:string;serverNow?:number;state:import('../../../../packages/shared-types/index').EventState}> {
   // #ifdef MP-WEIXIN
   initializeCloud();const response=await wx.cloud!.callFunction({name:'event',data});
   const result=response.result as {ok:boolean;error?:string;id:string;state:import('../../../../packages/shared-types/index').EventState};

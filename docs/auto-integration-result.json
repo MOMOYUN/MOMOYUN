@@ -1,0 +1,7 @@
+{
+  "eventId": "3ffae81df29f674a62df9a43742ce6a8a994c2cf2026c300cb36cd6336889d9d",
+  "earlyStopRejected": true,
+  "deadlineSettled": true,
+  "concurrentReadsStable": true,
+  "repeatedReadStable": true
+}

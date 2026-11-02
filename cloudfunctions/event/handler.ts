@@ -34,8 +34,10 @@ export async function main(input:any){
   if(input.action==='create')await service.create(owner,input.rules);
   else if(input.action!=='get'){
    if(!Number.isSafeInteger(input.version)||input.version<0)throw new Error('INVALID_VERSION');
-   const state=await service.command(owner,id,input.action,input.version,input.requestId);return {ok:true,id,state};
+   const state=await service.command(owner,id,input.action,input.version,input.requestId);return {ok:true,id,state,serverNow:Date.now()};
   }
-  const record=await read(doc);requireOwner(record,owner);return {ok:true,id,state:record.state};
+  const record=await read(doc);requireOwner(record,owner);
+  const state=input.action==='get'&&record.state.phase==='running'&&record.state.rules.stopMode==='auto'&&Date.now()>=(record.state.stopAfter??Infinity)?await service.settle(owner,id):record.state;
+  return {ok:true,id,state,serverNow:Date.now()};
  }catch(e){console.error('event operation failed',e);return {ok:false,error:(e as Error).message||'CLOUD_ERROR'}}
 }

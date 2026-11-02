@@ -1,6 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import {createEvent,startDraw,stopDraw,nextDraw} from '../packages/lottery-core/index.ts';
 const rules=()=>({name:'年会',participants:Array.from({length:6},(_,i)=>({id:String(i),name:'嘉宾'+i})),prizes:[{id:'a',name:'一等奖',batches:[1,2],weights:{'0':10}},{id:'b',name:'二等奖',batches:[3]}]});
-test('跨奖项多批次无重复，结果留痕',()=>{let s=createEvent(rules());while(s.phase!=='complete') s=nextDraw(stopDraw(startDraw(s),()=>0.5,123));assert.equal(new Set(s.results.flatMap(x=>x.winners.map(w=>w.id))).size,6);assert.equal(s.results.length,3);assert.equal(s.results[0].at,123)});
+test('跨奖项多批次无重复，结果留痕',()=>{let s=createEvent(rules());while(s.phase!=='complete') s=nextDraw(stopDraw(startDraw(s,100),()=>0.5,123));assert.equal(new Set(s.results.flatMap(x=>x.winners.map(w=>w.id))).size,6);assert.equal(s.results.length,3);assert.equal(s.results[0].at,123)});
 test('规则快照隔离输入与后续状态',()=>{let r=rules(),s=createEvent(r);r.participants[0].name='修改';assert.equal(s.rules.participants[0].name,'嘉宾0');const next=startDraw(s);next.rules.name='新名';assert.equal(s.rules.name,'年会')});
 test('禁止非法状态与重复停止',()=>{let s=createEvent(rules());assert.throws(()=>stopDraw(s,()=>0));s=stopDraw(startDraw(s),()=>0);assert.throws(()=>stopDraw(s,()=>0));assert.throws(()=>startDraw(s))});
 test('超额、重复身份、非法权重和批次被拒绝',()=>{for(const mutate of [(r:any)=>r.prizes[0].batches=[7],(r:any)=>r.participants[1].id='0',(r:any)=>r.prizes[0].weights={'0':NaN},(r:any)=>r.prizes[0].batches=[1.5]]){const r=rules();mutate(r);assert.throws(()=>createEvent(r))}});

@@ -10,6 +10,16 @@ export interface Repository {
 }
 export function eventService(repo:Repository, random:()=>number) {
   return {
+    async settle(owner:string,id:string,now=Date.now()) {
+      if(!owner)throw new Error('UNAUTHENTICATED');
+      return repo.transaction(id,record=>{
+        if(record.owner!==owner)throw new Error('FORBIDDEN');
+        if(record.state.phase==='running'&&record.state.rules.stopMode==='auto'&&now>=(record.state.stopAfter??Infinity)){
+          record.state=stopDraw(record.state,random,now);record.requests={};
+        }
+        return clone(record.state);
+      });
+    },
     async create(owner:string, rules:Rules) {
       if(!owner) throw new Error('UNAUTHENTICATED');
       return repo.insert({owner,state:createEvent(rules),requests:{}});
