@@ -11,6 +11,18 @@
       "style": {
         "navigationBarTitleText": "活动抽奖"
       }
+    },
+    {
+      "path": "pages/tool/index",
+      "style": {
+        "navigationBarTitleText": "随机工具"
+      }
+    },
+    {
+      "path": "pages/library/index",
+      "style": {
+        "navigationBarTitleText": "我的名单"
+      }
     }
   ],
   "globalStyle": {
