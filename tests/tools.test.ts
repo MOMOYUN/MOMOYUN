@@ -1,0 +1,6 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {runTool} from '../packages/lottery-core/tools.ts';import type {ToolConfig} from '../packages/lottery-core/tools.ts';
+const c:ToolConfig={mode:'group',name:'测试',items:['甲','乙','丙','丁','戊'],count:2,min:1,max:5,rows:2,cols:3,unique:true};
+test('分组均衡且无遗漏，排序不修改输入',()=>{const g=runTool(c,()=>.2);assert.equal(g.flat().length,5);assert.equal(new Set(g.flat()).size,5);assert.equal(Math.abs(g[0].length-g[1].length),1);const copy=[...c.items];runTool({...c,mode:'sort'});assert.deepEqual(c.items,copy)});
+test('数字边界与无重复满池抽取，即使随机源恒定也能终止',()=>{const a=runTool({...c,mode:'number',count:5},()=>0)[0];assert.equal(new Set(a).size,5);assert.throws(()=>runTool({...c,mode:'number',count:6}));assert.deepEqual(runTool({...c,mode:'number',min:-1,max:-1,count:1}),[['-1']])});
+test('奇数配对保留轮空者；座位容量不足被拒绝',()=>{assert.deepEqual(runTool({...c,mode:'pair'}).map(x=>x.length),[2,2,1]);assert.throws(()=>runTool({...c,mode:'seat',rows:1,cols:2}));assert.equal(runTool({...c,mode:'seat'}).flat().filter(x=>x!=='空座').length,5)});
+test('转盘和抽取数量验证，骰子范围',()=>{assert.throws(()=>runTool({...c,mode:'wheel',items:['甲']}));assert.throws(()=>runTool({...c,mode:'draw',count:6}));assert.deepEqual(runTool({...c,mode:'dice',count:3},()=>0),[['1','1','1']]);assert.throws(()=>runTool({...c,mode:'number'},()=>1))});

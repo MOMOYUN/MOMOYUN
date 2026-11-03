@@ -1,0 +1,17 @@
+{
+  "name": "random-display",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite --host 127.0.0.1"
+  },
+  "dependencies": {
+    "vue": "^3.4.21"
+  },
+  "devDependencies": {
+    "vite": "5.2.8",
+    "typescript": "^4.9.4",
+    "@vitejs/plugin-vue": "^5.0.0"
+  }
+}

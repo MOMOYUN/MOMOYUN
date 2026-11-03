@@ -1,0 +1,8 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {createEvent,startDraw,stopDraw} from '../packages/lottery-core/index.ts';
+import {eventService} from '../cloudfunctions/event/service.ts';
+import type {Repository,StoredEvent} from '../cloudfunctions/event/service.ts';
+const rules={name:'自动测试',participants:[{id:'a',name:'甲'},{id:'b',name:'乙'}],prizes:[{id:'p',name:'奖项',batches:[1]}],stopMode:'auto' as const,countdownSeconds:3,rollingSeconds:2};
+test('云端限制倒计时和自动停止时间边界',()=>{const s=startDraw(createEvent(rules),1000);assert.equal(s.revealAfter,4000);assert.equal(s.stopAfter,6000);assert.throws(()=>stopDraw(s,()=>0,3999));assert.throws(()=>stopDraw(s,()=>0,5999));assert.equal(stopDraw(s,()=>0,6000).results.length,1)});
+test('离开后到时读取可结算，重复及并发读取只结算一次',async()=>{let record:StoredEvent;let draws=0;const repo:Repository={async insert(r){record=r;return 'id'},async transaction(_id,fn){return fn(record)}};const service=eventService(repo,()=>{draws++;return 0});await service.create('owner',rules);await service.command('owner','id','start',0,'start-123');const before=await service.settle('owner','id',0);assert.equal(before.phase,'running');const now=Date.now()+10000;const result=await Promise.all([service.settle('owner','id',now),service.settle('owner','id',now)]);assert.equal(result[0].phase,'revealed');assert.deepEqual(result[0],result[1]);assert.equal(draws,1);await assert.rejects(service.settle('other','id',now),/FORBIDDEN/)});
+test('非法时长被拒绝',()=>{assert.throws(()=>createEvent({...rules,rollingSeconds:0}));assert.throws(()=>createEvent({...rules,countdownSeconds:-1}));assert.throws(()=>createEvent({...rules,rollingSeconds:31}))});
