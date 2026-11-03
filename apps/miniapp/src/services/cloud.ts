@@ -1,11 +1,29 @@
 import {CLOUD_ENV_ID} from '../config/cloud';
 declare const wx: {
   cloud?: {
+    uploadFile(options:{cloudPath:string;filePath:string}):Promise<{fileID:string}>;
+    getTempFileURL(options:{fileList:string[]}):Promise<{fileList:{fileID:string;tempFileURL:string;status:number}[]}>;
     init(options:{env:string;traceUser:boolean}):void;
     callFunction(options:{name:string;data?:unknown}):Promise<{result?:unknown}>;
   };
 };
 let initialized=false;
+export async function uploadImage(path:string):Promise<string>{
+  // #ifdef MP-WEIXIN
+  initializeCloud();return (await wx.cloud!.uploadFile({cloudPath:'activity-assets/'+Date.now()+'-'+Math.random().toString(36).slice(2)+'.jpg',filePath:path})).fileID;
+  // #endif
+  // #ifndef MP-WEIXIN
+  throw new Error('请在微信中上传图片');
+  // #endif
+}
+export async function imageUrls(ids:string[]):Promise<Record<string,string>>{
+  // #ifdef MP-WEIXIN
+  initializeCloud();if(!ids.length)return {};const response=await wx.cloud!.getTempFileURL({fileList:[...new Set(ids)]});return Object.fromEntries(response.fileList.filter(x=>x.status===0).map(x=>[x.fileID,x.tempFileURL]));
+  // #endif
+  // #ifndef MP-WEIXIN
+  return {};
+  // #endif
+}
 export async function callEvent(data:unknown):Promise<{id:string;serverNow?:number;state:import('../../../../packages/shared-types/index').EventState}> {
   // #ifdef MP-WEIXIN
   initializeCloud();const response=await wx.cloud!.callFunction({name:'event',data});
